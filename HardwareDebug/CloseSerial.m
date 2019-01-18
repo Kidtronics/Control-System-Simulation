@@ -1,1 +1,2 @@
 fclose(conn);
+clear

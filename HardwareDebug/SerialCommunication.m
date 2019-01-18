@@ -1,21 +1,30 @@
-port = '/dev/cu.usbmodem14201';
+listDevices = seriallist;
+port = listDevices(end);
 conn = serial(port, 'BaudRate', 115200, 'Terminator', 'LF');
 conn.InputBufferSize = 128;
 fopen(conn);
 
+% Constant. Max number of samples will be plotted on the screen.
 maxSampleSize = 3000;
+
+% Constant. Number of new samples 
+% that are added each time the plot is refreshed.
+numNewSamplesEachPlot = 200;
+
+% Number of samples read from serial during last plot refresh.
+lastPlottedSampleSize = 0;
 
 % These arrays are preallocated for performance improvement.
 time = zeros(1, maxSampleSize);
 pitch = zeros(1, maxSampleSize);
 pwm = zeros(1, maxSampleSize);
 
-% This is the size of time, pitch and pwm array.
+% This is the current size of time, pitch and pwm array.
 sampleWindowSize = 0;
 
 [key, value] = getSerialData(conn);
 
-for i = 1:10000
+for numSamplesRecieved = 1:10000
     % Wait until a timestamp comes in,
     % then start reading data.
     while key ~= 'Time'
@@ -36,8 +45,12 @@ for i = 1:10000
         end
         [key, value] = getSerialData(conn);
     end
-    sampleWindowSize = sampleWindowSize + 1;
     
-    plotData(time, pitch, pwm, sampleWindowSize);
-    drawnow
+    sampleWindowSize = min(sampleWindowSize + 1, maxSampleSize);
+    
+    if numSamplesRecieved - lastPlottedSampleSize >= numNewSamplesEachPlot
+        lastPlottedSampleSize = numSamplesRecieved;
+        plotData(time, pitch, pwm, sampleWindowSize);
+        drawnow
+    end
 end
