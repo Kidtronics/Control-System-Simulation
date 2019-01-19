@@ -18,6 +18,8 @@ lastPlottedSampleSize = 0;
 time = zeros(1, maxSampleSize);
 pitch = zeros(1, maxSampleSize);
 pwm = zeros(1, maxSampleSize);
+angVel = zeros(1, maxSampleSize);
+angVelSetpoint = zeros(1, maxSampleSize);
 
 % This is the current size of time, pitch and pwm array.
 sampleWindowSize = 0;
@@ -42,6 +44,12 @@ for numSamplesRecieved = 1:10000
         elseif key == 'PWM'
             pwm = ...
                 addToArray(pwm, sampleWindowSize, maxSampleSize, value);
+        elseif key == 'AngVel'
+            angVel = ...
+                addToArray(angVel, sampleWindowSize, maxSampleSize, value);
+        elseif key == 'AngVelS'
+            angVelSetpoint = ...
+                addToArray(angVelSetpoint, sampleWindowSize, maxSampleSize, value);
         end
         [key, value] = getSerialData(conn);
     end
@@ -50,7 +58,7 @@ for numSamplesRecieved = 1:10000
     
     if numSamplesRecieved - lastPlottedSampleSize >= numNewSamplesEachPlot
         lastPlottedSampleSize = numSamplesRecieved;
-        plotData(time, pitch, pwm, sampleWindowSize);
+        plotData(time, pitch, pwm, angVel, angVelSetpoint, sampleWindowSize);
         drawnow
     end
 end
