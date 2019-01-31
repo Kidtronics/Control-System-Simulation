@@ -7,7 +7,7 @@ function [key,value] = getSerialData(connection)
         key = string(splitData(1));
         value = str2double(string(splitData(2)));
     else
-        key = ' ';
+        key = " ";
         value = 0;
     end
 end

@@ -5,21 +5,23 @@ conn.InputBufferSize = 128;
 fopen(conn);
 
 % Constant. Max number of samples will be plotted on the screen.
-maxSampleSize = 3000;
+maxSampleSize = 2000;
 
 % Constant. Number of new samples 
 % that are added each time the plot is refreshed.
-numNewSamplesEachPlot = 200;
+numNewSamplesEachPlot = 100;
 
 % Number of samples read from serial during last plot refresh.
 lastPlottedSampleSize = 0;
 
-% These arrays are preallocated for performance improvement.
+% Preallocate to optimize efficiency.
 time = zeros(1, maxSampleSize);
-pitch = zeros(1, maxSampleSize);
-pwm = zeros(1, maxSampleSize);
-angVel = zeros(1, maxSampleSize);
-angVelSetpoint = zeros(1, maxSampleSize);
+
+Keys = {'Pitch', 'PitchS', 'PWM', 'AngVel', 'AngVelS', 'MSpeed', 'MSpeedS'};
+keyMap = containers.Map(Keys, Keys);
+
+% Map that map names to values.
+dataMap = containers.Map;
 
 % This is the current size of time, pitch and pwm array.
 sampleWindowSize = 0;
@@ -37,20 +39,17 @@ for numSamplesRecieved = 1:10000
     
     [key, value] = getSerialData(conn);
     while key ~= 'Time'
-        
-        if key == 'Pitch'
-            pitch = ...
-                addToArray(pitch, sampleWindowSize, maxSampleSize, value);
-        elseif key == 'PWM'
-            pwm = ...
-                addToArray(pwm, sampleWindowSize, maxSampleSize, value);
-        elseif key == 'AngVel'
-            angVel = ...
-                addToArray(angVel, sampleWindowSize, maxSampleSize, value);
-        elseif key == 'AngVelS'
-            angVelSetpoint = ...
-                addToArray(angVelSetpoint, sampleWindowSize, maxSampleSize, value);
+        keyChar = char(key);
+        % If key exists in the plot key map, then store
+        % this value into dataMap.
+        if keyChar == keyMap(keyChar)
+            if ~isKey(dataMap, keyChar)
+                dataMap(keyChar) = zeros(1, maxSampleSize);
+            end
+            dataMap(keyChar) = ...
+                addToArray(dataMap(keyChar), sampleWindowSize, maxSampleSize, value);
         end
+        
         [key, value] = getSerialData(conn);
     end
     
@@ -58,7 +57,9 @@ for numSamplesRecieved = 1:10000
     
     if numSamplesRecieved - lastPlottedSampleSize >= numNewSamplesEachPlot
         lastPlottedSampleSize = numSamplesRecieved;
-        plotData(time, pitch, pwm, angVel, angVelSetpoint, sampleWindowSize);
+        plotData(time, dataMap, sampleWindowSize);
         drawnow
     end
 end
+
+fclose(conn);
