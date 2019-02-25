@@ -8,16 +8,16 @@ Q = [1, 0, 0, 0;
      0, 1, 0, 0;
      0, 0, 1, 0;
      0, 0, 0, 1];
-R = 0.01;
+R = 1;
 
 [K, S, e] = lqr(A, B, Q, R);
 
-% Target state vector;
-target = [3; 0; pi; 0];
-initialStates = [0; 0; pi+0.1; 0];
+% Target state vect
+target = []
 
 tspan = 0:0.1:10;
-[t, y] = ode45(@(t, y) RobotODE(y, -K*(y - target)), tspan, initialStates);
+initialStates = [0; 0.1; pi; 0];
+[t, y] = ode45(@(t, y) RobotODE(y, -K*y), tspan, initialStates);
 
 for i = 1:length(t)
    drawRobot(y(i,:), m, M, L);
